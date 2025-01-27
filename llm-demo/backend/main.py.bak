@@ -1,0 +1,253 @@
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+import httpx
+import os
+import time
+import asyncio
+import logging
+import uuid
+from contextlib import asynccontextmanager
+import anthropic
+
+# Set up logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(), logging.FileHandler("api.log")],
+)
+
+logger = logging.getLogger(__name__)
+
+
+# Create custom logging middleware
+class RequestLoggingMiddleware:
+    async def __call__(self, request: Request, call_next):
+        request_id = str(uuid.uuid4())
+        start_time = time.time()
+
+        # Log request details
+        logger.info(f"Request started - ID: {request_id}")
+        logger.info(f"Request details - Method: {request.method}, URL: {request.url}")
+
+        try:
+            # Get request body
+            body = await request.body()
+            if body:
+                logger.info(f"Request body - ID: {request_id}, Body: {body.decode()}")
+        except Exception as e:
+            logger.error(
+                f"Error reading request body - ID: {request_id}, Error: {str(e)}"
+            )
+
+        try:
+            response = await call_next(request)
+            process_time = time.time() - start_time
+
+            logger.info(
+                f"Request completed - ID: {request_id}, "
+                f"Status: {response.status_code}, "
+                f"Processing Time: {process_time:.4f}s"
+            )
+            return response
+
+        except Exception as e:
+            logger.error(f"Request failed - ID: {request_id}, Error: {str(e)}")
+            raise
+
+
+class APICallLogger:
+    def __init__(self, service_name: str):
+        self.service_name = service_name
+        self.logger = logging.getLogger(f"api_call.{service_name}")
+
+    @asynccontextmanager
+    async def log_api_call(self, endpoint: str):
+        call_id = str(uuid.uuid4())
+        start_time = time.time()
+
+        self.logger.info(
+            f"API call started - Service: {self.service_name}, ID: {call_id}"
+        )
+        self.logger.info(f"API endpoint: {endpoint}")
+
+        try:
+            yield call_id
+            process_time = time.time() - start_time
+            self.logger.info(
+                f"API call completed - Service: {self.service_name}, "
+                f"ID: {call_id}, Duration: {process_time:.4f}s"
+            )
+        except Exception as e:
+            process_time = time.time() - start_time
+            self.logger.error(
+                f"API call failed - Service: {self.service_name}, "
+                f"ID: {call_id}, Duration: {process_time:.4f}s, Error: {str(e)}"
+            )
+            raise
+
+
+app = FastAPI()
+
+# Add middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.middleware("http")(RequestLoggingMiddleware())
+
+# Create loggers for each service
+local_logger = APICallLogger("local_model")
+claude_logger = APICallLogger("claude")
+chatgpt_logger = APICallLogger("chatgpt")
+
+
+@app.post("/query")
+async def query_models(message: str):
+    logger.info(f"Received query request with message length: {len(message)}")
+
+    # async def query_local():
+    #     endpoint = os.getenv("LOCAL_MODEL_ENDPOINT")
+    #     if not endpoint:
+    #         logger.error("LOCAL_MODEL_ENDPOINT environment variable not set")
+    #         raise HTTPException(
+    #             status_code=500,
+    #             detail="LOCAL_MODEL_ENDPOINT environment variable not set",
+    #         )
+    #
+    #     async with local_logger.log_api_call(endpoint) as call_id:
+    #         start = time.time()
+    #         try:
+    #             async with httpx.AsyncClient() as client:
+    #                 response = await client.post(endpoint, json={"message": message})
+    #                 logger.info(f"Local model response status: {response.status_code}")
+    #
+    #             result = {"response": response.json(), "latency": time.time() - start}
+    #             logger.info(
+    #                 f"Local model call successful - ID: {call_id}, Latency: {result['latency']:.4f}s"
+    #             )
+    #             return result
+    #
+    #         except Exception as e:
+    #             logger.error(
+    #                 f"Local model call failed - ID: {call_id}, Error: {str(e)}"
+    #             )
+    #             raise
+
+    async def query_claude():
+        endpoint = os.getenv("ANTHROPIC_API_URL")
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+
+        if not endpoint or not api_key:
+            logger.error("Missing Claude API configuration")
+            missing_vars = []
+            if not endpoint:
+                missing_vars.append("ANTHROPIC_API_URL")
+            if not api_key:
+                missing_vars.append("ANTHROPIC_API_KEY")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Missing environment variables: {', '.join(missing_vars)}",
+            )
+
+        async with claude_logger.log_api_call(endpoint) as call_id:
+            start = time.time()
+            try:
+                client = anthropic.Anthropic()
+
+                message = client.messages.create(
+                    model="claude-3-5-sonnet-20241022",
+                    max_tokens=1000,
+                    temperature=0,
+                    system="You are a world-class poet. Respond only with short poems.",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": "Why is the ocean salty?"}
+                            ],
+                        }
+                    ],
+                )
+                print(message.content)
+
+                result = {"message": message.content, "latency": time.time() - start}
+                logger.info(
+                    f"Claude API call successful - ID: {call_id}, Latency: {result['latency']:.4f}s"
+                )
+                return result
+
+            except Exception as e:
+                logger.error(f"Claude API call failed - ID: {call_id}, Error: {str(e)}")
+                raise
+
+    # async def query_chatgpt():
+    #     endpoint = os.getenv("OPENAI_API_URL")
+    #     api_key = os.getenv("OPENAI_API_KEY")
+    #
+    #     if not endpoint or not api_key:
+    #         logger.error("Missing OpenAI API configuration")
+    #         missing_vars = []
+    #         if not endpoint:
+    #             missing_vars.append("OPENAI_API_URL")
+    #         if not api_key:
+    #             missing_vars.append("OPENAI_API_KEY")
+    #         raise HTTPException(
+    #             status_code=500,
+    #             detail=f"Missing environment variables: {', '.join(missing_vars)}",
+    #         )
+    #
+    #     async with chatgpt_logger.log_api_call(endpoint) as call_id:
+    #         start = time.time()
+    #         try:
+    #             async with httpx.AsyncClient() as client:
+    #                 response = await client.post(
+    #                     endpoint,
+    #                     headers={"x-api-key": api_key},
+    #                     json={"message": message},
+    #                 )
+    #                 logger.info(f"ChatGPT API response status: {response.status_code}")
+    #
+    #             result = {"response": response.json(), "latency": time.time() - start}
+    #             logger.info(
+    #                 f"ChatGPT API call successful - ID: {call_id}, Latency: {result['latency']:.4f}s"
+    #             )
+    #             return result
+    #
+    #         except Exception as e:
+    #             logger.error(
+    #                 f"ChatGPT API call failed - ID: {call_id}, Error: {str(e)}"
+    #             )
+    #             raise
+
+    try:
+        start_time = time.time()
+        logger.info("Starting parallel API calls")
+
+        # local_result, claude_result, chatgpt_result = await asyncio.gather(
+        #     query_local(), query_claude(), query_chatgpt(), return_exceptions=True
+        # )
+
+        # removed local, chatgpt
+        claude_result = await asyncio.gather(query_claude(), return_exceptions=True)
+        total_time = time.time() - start_time
+        logger.info(f"All API calls completed in {total_time:.4f}s")
+
+        # Process results and handle any exceptions
+        results = {}
+        for name, result in [
+            ("claude", claude_result),
+            # ("chatgpt", chatgpt_result),
+        ]:
+            if isinstance(result, Exception):
+                logger.error(f"{name} API call failed: {str(result)}")
+                results[name] = {"error": str(result)}
+            else:
+                results[name] = result
+
+        return results
+
+    except Exception as e:
+        logger.error(f"Error in query_models: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

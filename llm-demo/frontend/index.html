@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LLM Latency Comparison</title>
+  <style>
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .columns {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .column {
+      flex: 1;
+      margin: 0 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    .input-area {
+      margin-top: 20px;
+    }
+    #messageInput {
+      width: 80%;
+      padding: 10px;
+    }
+    button {
+      padding: 10px 20px;
+    }
+    .latency {
+      color: red;
+      font-size: 0.8em;
+    }
+    .error {
+      color: red;
+      font-style: italic;
+    }
+    .disabled {
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="columns">
+      <div class="column disabled">
+        <h2>Local</h2>
+        <div id="localResponse">Model not currently active</div>
+      </div>
+      <div class="column">
+        <h2>Claude</h2>
+        <div id="claudeResponse"></div>
+      </div>
+      <div class="column disabled">
+        <h2>ChatGPT</h2>
+        <div id="chatgptResponse">Model not currently active</div>
+      </div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="messageInput" placeholder="Enter your message">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+  <script>
+    async function sendMessage() {
+      const message = document.getElementById('messageInput').value;
+      if (!message) return;
+      
+      // Clear previous responses
+      document.getElementById('localResponse').innerHTML = 'Model not currently active';
+      document.getElementById('claudeResponse').innerHTML = 'Loading...';
+      document.getElementById('chatgptResponse').innerHTML = 'Model not currently active';
+      
+      try {
+        const response = await fetch('http://localhost:8000/query', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message })
+        });
+        
+        const data = await response.json();
+        
+        // Handle Claude response
+        if (data.claude) {
+          const claudeResult = data.claude;
+          const claudeElement = document.getElementById('claudeResponse');
+          
+          if (claudeResult.error) {
+            claudeElement.innerHTML = `
+              <div class="error">Error: ${claudeResult.error}</div>
+            `;
+          } else {
+            claudeElement.innerHTML = `
+              ${claudeResult.message}
+              <div class="latency">Latency: ${claudeResult.latency.toFixed(3)}s</div>
+            `;
+          }
+        }
+
+        /* Uncomment and modify when local model is ready
+        if (data.local) {
+          const localResult = data.local;
+          const localElement = document.getElementById('localResponse');
+          
+          if (localResult.error) {
+            localElement.innerHTML = `
+              <div class="error">Error: ${localResult.error}</div>
+            `;
+          } else {
+            localElement.innerHTML = `
+              ${localResult.message}
+              <div class="latency">Latency: ${localResult.latency.toFixed(3)}s</div>
+            `;
+          }
+        }
+        */
+
+        /* Uncomment and modify when ChatGPT is ready
+        if (data.chatgpt) {
+          const chatgptResult = data.chatgpt;
+          const chatgptElement = document.getElementById('chatgptResponse');
+          
+          if (chatgptResult.error) {
+            chatgptElement.innerHTML = `
+              <div class="error">Error: ${chatgptResult.error}</div>
+            `;
+          } else {
+            chatgptElement.innerHTML = `
+              ${chatgptResult.message}
+              <div class="latency">Latency: ${chatgptResult.latency.toFixed(3)}s</div>
+            `;
+          }
+        }
+        */
+        
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('claudeResponse').innerHTML = `
+          <div class="error">Error: Failed to get response</div>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>
