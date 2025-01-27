@@ -17,3 +17,19 @@ services:
       - "80:80"
     depends_on:
       - backend
+  llm:
+    build: ./llm
+    ports:
+      - "11434:11434"
+    depends_on:
+      - backend
+
+    # run this on local GPU
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+

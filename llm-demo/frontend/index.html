@@ -45,9 +45,9 @@
 <body>
   <div class="container">
     <div class="columns">
-      <div class="column disabled">
-        <h2>Local</h2>
-        <div id="localResponse">Model not currently active</div>
+      <div class="column">
+        <h2>DeepSeek</h2>
+        <div id="localResponse">DeepSeek</div>
       </div>
       <div class="column">
         <h2>Claude</h2>
@@ -69,7 +69,7 @@
       if (!message) return;
       
       // Clear previous responses
-      document.getElementById('localResponse').innerHTML = 'Model not currently active';
+      document.getElementById('localResponse').innerHTML = 'Loading...';
       document.getElementById('claudeResponse').innerHTML = 'Loading...';
       document.getElementById('chatgptResponse').innerHTML = 'Model not currently active';
       
@@ -101,7 +101,7 @@
           }
         }
 
-        /* Uncomment and modify when local model is ready
+        // Uncomment and modify when local model is ready
         if (data.local) {
           const localResult = data.local;
           const localElement = document.getElementById('localResponse');
@@ -117,7 +117,7 @@
             `;
           }
         }
-        */
+        //
 
         /* Uncomment and modify when ChatGPT is ready
         if (data.chatgpt) {

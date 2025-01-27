@@ -8,5 +8,6 @@ dependencies = [
     "anthropic>=0.45.0",
     "fastapi>=0.115.7",
     "httpx>=0.28.1",
+    "ollama>=0.4.7",
     "uvicorn>=0.34.0",
 ]

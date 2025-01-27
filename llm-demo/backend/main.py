@@ -8,6 +8,7 @@ import uuid
 from contextlib import asynccontextmanager
 import uvicorn
 import anthropic
+from ollama import Client
 
 
 # Set up logging configuration
@@ -110,6 +111,7 @@ app.middleware("http")(RequestLoggingMiddleware())
 
 # Create logger for service
 claude_logger = APICallLogger("claude")
+local_logger = APICallLogger("local")
 
 
 @app.get("/")
@@ -173,15 +175,51 @@ async def query_models(request: QueryRequest):
                 logger.error(f"Claude API call failed - ID: {call_id}, Error: {str(e)}")
                 raise HTTPException(status_code=500, detail=str(e))
 
+    async def query_local():
+        async with local_logger.log_api_call("Local API") as call_id:
+            start = time.time()
+            try:
+                client = Client(
+                    host="http://llm:11434",
+                )
+                response = client.chat(
+                    model="deepseek-r1:7b",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": request.message,
+                        },
+                    ],
+                )
+
+                text_response = response.message.content
+
+                logger.info(f"Local AI Message content: {text_response}")
+
+                result = {
+                    "message": text_response,
+                    "latency": time.time() - start,
+                }
+                logger.info(
+                    f"Local API call successful - ID: {call_id}, Latency: {result['latency']:.4f}s"
+                )
+                return result
+
+            except Exception as e:
+                logger.error(f"Claude API call failed - ID: {call_id}, Error: {str(e)}")
+                raise HTTPException(status_code=500, detail=str(e))
+
     try:
         start_time = time.time()
         logger.info("Starting API call")
 
         claude_result = await query_claude()
+        local_result = await query_local()
+
         total_time = time.time() - start_time
         logger.info(f"API call completed in {total_time:.4f}s")
 
-        return {"claude": claude_result}
+        return {"claude": claude_result, "local": local_result}
 
     except Exception as e:
         logger.error(f"Error in query_models: {str(e)}")
