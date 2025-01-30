@@ -1,147 +1,160 @@
-<!DOCTYPE html>
+<!DOCT<!DOCTYPE html>
 <html>
 <head>
-  <title>LLM Latency Comparison</title>
-  <style>
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .columns {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-    .column {
-      flex: 1;
-      margin: 0 10px;
-      padding: 10px;
-      border: 1px solid #ccc;
-    }
-    .input-area {
-      margin-top: 20px;
-    }
-    #messageInput {
-      width: 80%;
-      padding: 10px;
-    }
-    button {
-      padding: 10px 20px;
-    }
-    .latency {
-      color: red;
-      font-size: 0.8em;
-    }
-    .error {
-      color: red;
-      font-style: italic;
-    }
-    .disabled {
-      opacity: 0.5;
-    }
-  </style>
+    <title>LLM Latency Comparison</title>
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .columns {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .column {
+            flex: 1;
+            margin: 0 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        .input-area {
+            margin-top: 20px;
+        }
+        #messageInput {
+            width: 80%;
+            padding: 10px;
+        }
+        button {
+            padding: 10px 20px;
+        }
+        .latency {
+            color: red;
+            font-size: 0.8em;
+        }
+        .error {
+            color: red;
+            font-style: italic;
+        }
+        .disabled {
+            opacity: 0.5;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="columns">
-      <div class="column">
-        <h2>Ollama</h2>
-        <div id="localResponse">Ollama</div>
-      </div>
-      <div class="column">
-        <h2>Claude</h2>
-        <div id="claudeResponse">Claude</div>
-      </div>
-      <div class="column">
-        <h2>ChatGPT</h2>
-        <div id="ChatGPTResponse">ChatGPT</div>
-      </div>
+    <div class="container">
+        <div class="columns">
+            <div class="column">
+                <h2>Ollama</h2>
+                <div id="localResponse">Ollama</div>
+            </div>
+            <div class="column">
+                <h2>Claude</h2>
+                <div id="claudeResponse">Claude</div>
+            </div>
+            <div class="column">
+                <h2>ChatGPT</h2>
+                <div id="ChatGPTResponse">ChatGPT</div>
+            </div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Enter your message">
+            <button onclick="sendMessage()">Send</button>
+        </div>
     </div>
-    <div class="input-area">
-      <input type="text" id="messageInput" placeholder="Enter your message">
-      <button onclick="sendMessage()">Send</button>
-    </div>
-  </div>
-  <script>
-    async function sendMessage() {
-      const message = document.getElementById('messageInput').value;
-      if (!message) return;
-      
-      // Clear previous responses
-      document.getElementById('localResponse').innerHTML = 'Loading...';
-      document.getElementById('claudeResponse').innerHTML = 'Loading...';
-      document.getElementById('ChatGPTResponse').innerHTML = 'Loading...';
-      
-      try {
-        const response = await fetch('http://backend:8000/query', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ message })
-        });
-        
-        const data = await response.json();
-        
-        // Handle Claude response
-        if (data.claude) {
-          const claudeResult = data.claude;
-          const claudeElement = document.getElementById('claudeResponse');
-          
-          if (claudeResult.error) {
-            claudeElement.innerHTML = `
-              <div class="error">Error: ${claudeResult.error}</div>
-            `;
-          } else {
-            claudeElement.innerHTML = `
-              ${claudeResult.message}
-              <div class="latency">Latency: ${claudeResult.latency.toFixed(3)}s</div>
-            `;
-          }
-        }
 
-        // Uncomment and modify when local model is ready
-        if (data.local) {
-          const localResult = data.local;
-          const localElement = document.getElementById('localResponse');
-          
-          if (localResult.error) {
-            localElement.innerHTML = `
-              <div class="error">Error: ${localResult.error}</div>
-            `;
-          } else {
-            localElement.innerHTML = `
-              ${localResult.message}
-              <div class="latency">Latency: ${localResult.latency.toFixed(3)}s</div>
-            `;
-          }
-        }
-        //
+    <!-- Config script that will be modified by the entrypoint script -->
+    <script>
+        window.config = {
+            backendUrl: '%%BACKEND_URL%%'
+        };
+    </script>
 
-        if (data.openai) {
-          const ChatGPTResult = data.openai;
-          const ChatGPTElement = document.getElementById('ChatGPTResponse');
-          
-          if (ChatGPTResult.error) {
-            ChatGPTElement.innerHTML = `
-              <div class="error">Error: ${ChatGPTResult.error}</div>
-            `;
-          } else {
-            ChatGPTElement.innerHTML = `
-              ${ChatGPTResult.message}
-              <div class="latency">Latency: ${ChatGPTResult.latency.toFixed(3)}s</div>
-            `;
-          }
+    <script>
+        async function sendMessage() {
+            const message = document.getElementById('messageInput').value;
+            if (!message) return;
+
+            // Clear previous responses
+            document.getElementById('localResponse').innerHTML = 'Loading...';
+            document.getElementById('claudeResponse').innerHTML = 'Loading...';
+            document.getElementById('ChatGPTResponse').innerHTML = 'Loading...';
+
+            try {
+                const response = await fetch(window.config.backendUrl + '/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Handle Claude response
+                if (data.claude) {
+                    const claudeResult = data.claude;
+                    const claudeElement = document.getElementById('claudeResponse');
+
+                    if (claudeResult.error) {
+                        claudeElement.innerHTML = `
+                            <div class="error">Error: ${claudeResult.error}</div>
+                        `;
+                    } else {
+                        claudeElement.innerHTML = `
+                            ${claudeResult.message}
+                            <div class="latency">Latency: ${claudeResult.latency.toFixed(3)}s</div>
+                        `;
+                    }
+                }
+
+                // Handle Local AI response
+                if (data.local) {
+                    const localResult = data.local;
+                    const localElement = document.getElementById('localResponse');
+
+                    if (localResult.error) {
+                        localElement.innerHTML = `
+                            <div class="error">Error: ${localResult.error}</div>
+                        `;
+                    } else {
+                        localElement.innerHTML = `
+                            ${localResult.message}
+                            <div class="latency">Latency: ${localResult.latency.toFixed(3)}s</div>
+                        `;
+                    }
+                }
+
+                // Handle OpenAI response
+                if (data.openai) {
+                    const ChatGPTResult = data.openai;
+                    const ChatGPTElement = document.getElementById('ChatGPTResponse');
+
+                    if (ChatGPTResult.error) {
+                        ChatGPTElement.innerHTML = `
+                            <div class="error">Error: ${ChatGPTResult.error}</div>
+                        `;
+                    } else {
+                        ChatGPTElement.innerHTML = `
+                            ${ChatGPTResult.message}
+                            <div class="latency">Latency: ${ChatGPTResult.latency.toFixed(3)}s</div>
+                        `;
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                const errorMessage = `<div class="error">Error: ${error.message}</div>`;
+                document.getElementById('claudeResponse').innerHTML = errorMessage;
+                document.getElementById('localResponse').innerHTML = errorMessage;
+                document.getElementById('ChatGPTResponse').innerHTML = errorMessage;
+            }
         }
-        
-      } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('claudeResponse').innerHTML = `
-          <div class="error">Error: Failed to get response</div>
-        `;
-      }
-    }
-  </script>
+    </script>
 </body>
 </html>
