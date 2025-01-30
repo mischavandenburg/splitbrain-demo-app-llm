@@ -9,5 +9,6 @@ dependencies = [
     "fastapi>=0.115.7",
     "httpx>=0.28.1",
     "ollama>=0.4.7",
+    "openai>=1.60.1",
     "uvicorn>=0.34.0",
 ]

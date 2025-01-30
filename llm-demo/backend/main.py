@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 import anthropic
 from ollama import Client
+from openai import OpenAI, chat
 
 
 # Set up logging configuration
@@ -194,7 +195,8 @@ async def query_models(request: QueryRequest):
 
                 text_response = response.message.content
 
-                logger.info(f"Local AI Message content: {text_response}")
+                # print entire response
+                # logger.info(f"Local AI Message content: {text_response}")
 
                 result = {
                     "message": text_response,
@@ -206,7 +208,48 @@ async def query_models(request: QueryRequest):
                 return result
 
             except Exception as e:
-                logger.error(f"Claude API call failed - ID: {call_id}, Error: {str(e)}")
+                logger.error(f"Local AI call failed - ID: {call_id}, Error: {str(e)}")
+                raise HTTPException(status_code=500, detail=str(e))
+
+    async def query_openai():
+        async with local_logger.log_api_call("Local API") as call_id:
+            start = time.time()
+            try:
+                client = OpenAI(
+                    api_key=os.environ.get("OPENAI_API_KEY"),
+                )
+
+                chat_completion = client.chat.completions.create(
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": request.message,
+                        },
+                        {
+                            "role": "system",
+                            "content": "You are a helpful assistant. You should only respond in plain text and do not include any html formatting.",
+                        },
+                    ],
+                    model="gpt-4o",
+                )
+
+                # logger.info(f"Open AI full completion: {chat_completion}")
+
+                text_response = chat_completion.choices[0].message.content
+
+                # logger.info(f"Open AI Message content: {text_response}")
+
+                result = {
+                    "message": text_response,
+                    "latency": time.time() - start,
+                }
+                logger.info(
+                    f"Open AI call successful - ID: {call_id}, Latency: {result['latency']:.4f}s"
+                )
+                return result
+
+            except Exception as e:
+                logger.error(f"Open AI call failed - ID: {call_id}, Error: {str(e)}")
                 raise HTTPException(status_code=500, detail=str(e))
 
     try:
@@ -215,11 +258,16 @@ async def query_models(request: QueryRequest):
 
         claude_result = await query_claude()
         local_result = await query_local()
+        openai_result = await query_openai()
 
         total_time = time.time() - start_time
         logger.info(f"API call completed in {total_time:.4f}s")
 
-        return {"claude": claude_result, "local": local_result}
+        return {
+            "claude": claude_result,
+            "local": local_result,
+            "openai": openai_result,
+        }
 
     except Exception as e:
         logger.error(f"Error in query_models: {str(e)}")

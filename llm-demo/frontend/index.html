@@ -51,11 +51,11 @@
       </div>
       <div class="column">
         <h2>Claude</h2>
-        <div id="claudeResponse"></div>
+        <div id="claudeResponse">Claude</div>
       </div>
-      <div class="column disabled">
+      <div class="column">
         <h2>ChatGPT</h2>
-        <div id="chatgptResponse">Model not currently active</div>
+        <div id="ChatGPTResponse">ChatGPT</div>
       </div>
     </div>
     <div class="input-area">
@@ -71,7 +71,7 @@
       // Clear previous responses
       document.getElementById('localResponse').innerHTML = 'Loading...';
       document.getElementById('claudeResponse').innerHTML = 'Loading...';
-      document.getElementById('chatgptResponse').innerHTML = 'Model not currently active';
+      document.getElementById('ChatGPTResponse').innerHTML = 'Loading...';
       
       try {
         const response = await fetch('http://localhost:8000/query', {
@@ -119,23 +119,21 @@
         }
         //
 
-        /* Uncomment and modify when ChatGPT is ready
-        if (data.chatgpt) {
-          const chatgptResult = data.chatgpt;
-          const chatgptElement = document.getElementById('chatgptResponse');
+        if (data.openai) {
+          const ChatGPTResult = data.openai;
+          const ChatGPTElement = document.getElementById('ChatGPTResponse');
           
-          if (chatgptResult.error) {
-            chatgptElement.innerHTML = `
-              <div class="error">Error: ${chatgptResult.error}</div>
+          if (ChatGPTResult.error) {
+            ChatGPTElement.innerHTML = `
+              <div class="error">Error: ${ChatGPTResult.error}</div>
             `;
           } else {
-            chatgptElement.innerHTML = `
-              ${chatgptResult.message}
-              <div class="latency">Latency: ${chatgptResult.latency.toFixed(3)}s</div>
+            ChatGPTElement.innerHTML = `
+              ${ChatGPTResult.message}
+              <div class="latency">Latency: ${ChatGPTResult.latency.toFixed(3)}s</div>
             `;
           }
         }
-        */
         
       } catch (error) {
         console.error('Error:', error);

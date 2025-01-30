@@ -8,6 +8,7 @@ anyio==4.8.0
     # via
     #   anthropic
     #   httpx
+    #   openai
     #   starlette
 certifi==2024.12.14
     # via
@@ -16,7 +17,9 @@ certifi==2024.12.14
 click==8.1.8
     # via uvicorn
 distro==1.9.0
-    # via anthropic
+    # via
+    #   anthropic
+    #   openai
 fastapi==0.115.7
     # via llm-demo (pyproject.toml)
 h11==0.14.0
@@ -30,31 +33,41 @@ httpx==0.28.1
     #   llm-demo (pyproject.toml)
     #   anthropic
     #   ollama
+    #   openai
 idna==3.10
     # via
     #   anyio
     #   httpx
 jiter==0.8.2
-    # via anthropic
+    # via
+    #   anthropic
+    #   openai
 ollama==0.4.7
+    # via llm-demo (pyproject.toml)
+openai==1.60.1
     # via llm-demo (pyproject.toml)
 pydantic==2.10.6
     # via
     #   anthropic
     #   fastapi
     #   ollama
+    #   openai
 pydantic-core==2.27.2
     # via pydantic
 sniffio==1.3.1
     # via
     #   anthropic
     #   anyio
+    #   openai
 starlette==0.45.3
     # via fastapi
+tqdm==4.67.1
+    # via openai
 typing-extensions==4.12.2
     # via
     #   anthropic
     #   fastapi
+    #   openai
     #   pydantic
     #   pydantic-core
 uvicorn==0.34.0
