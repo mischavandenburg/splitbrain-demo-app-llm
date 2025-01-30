@@ -51,9 +51,11 @@ jobs:
           - image: ghcr.io/mischavandenburg/sb-llm-demo-backend
             dockerfile: llm-demo/backend/Dockerfile
             path: llm-demo/backend
-          - image: ghcr.io/mischavandenburg/sb-llm-demo-llm
-            dockerfile: llm-demo/llm/Dockerfile
-            path: llm-demo/llm
+
+          # Exclude the LLM container from build CI
+          # - image: ghcr.io/mischavandenburg/sb-llm-demo-llm
+          #   dockerfile: llm-demo/llm/Dockerfile
+          #   path: llm-demo/llm
 
     steps:
       - name: Checkout
@@ -103,8 +105,8 @@ jobs:
             # Update backend deployment
             yq e '.spec.template.spec.containers[0].image = "ghcr.io/mischavandenburg/sb-llm-demo-backend:${{ needs.prepare_tag.outputs.tag }}"' -i ./apps/backend/deployment.yaml
             
-            # Update llm deployment
-            yq e '.spec.template.spec.containers[0].image = "ghcr.io/mischavandenburg/sb-llm-demo-llm:${{ needs.prepare_tag.outputs.tag }}"' -i ./apps/llm/deployment.yaml
+            # Update llm deployment (disabled)
+            # yq e '.spec.template.spec.containers[0].image = "ghcr.io/mischavandenburg/sb-llm-demo-llm:${{ needs.prepare_tag.outputs.tag }}"' -i ./apps/llm/deployment.yaml
 
       - uses: EndBug/add-and-commit@v9
         with:
