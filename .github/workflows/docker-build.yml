@@ -76,7 +76,7 @@ jobs:
           push: true
 
   update_gitops:
-    if: false  # Temporarily disabled
+    # if: false  # Temporarily disabled
     needs:
       - prepare_tag
       - build_and_push
