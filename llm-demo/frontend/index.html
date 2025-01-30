@@ -46,8 +46,8 @@
   <div class="container">
     <div class="columns">
       <div class="column">
-        <h2>DeepSeek</h2>
-        <div id="localResponse">DeepSeek</div>
+        <h2>Ollama</h2>
+        <div id="localResponse">Ollama</div>
       </div>
       <div class="column">
         <h2>Claude</h2>
@@ -74,7 +74,7 @@
       document.getElementById('ChatGPTResponse').innerHTML = 'Loading...';
       
       try {
-        const response = await fetch('http://localhost:8000/query', {
+        const response = await fetch('http://backend:8000/query', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
