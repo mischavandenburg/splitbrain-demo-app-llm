@@ -14,7 +14,7 @@ COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 # Default to Docker Compose URL if not specified
-ENV BACKEND_URL="http://backend:8000"
+ENV BACKEND_URL="http://localhost:8000"
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

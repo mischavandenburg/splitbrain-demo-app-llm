@@ -1,44 +1,125 @@
-<!DOCT<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>LLM Latency Comparison</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+
         .container {
             max-width: 1200px;
-            margin: 0 auto;
+            margin: 2rem auto;
             padding: 20px;
         }
+
         .columns {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
+
         .column {
-            flex: 1;
-            margin: 0 10px;
-            padding: 10px;
-            border: 1px solid #ccc;
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        .input-area {
-            margin-top: 20px;
+
+        .column:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
-        #messageInput {
-            width: 80%;
-            padding: 10px;
+
+        h2 {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 600;
         }
-        button {
-            padding: 10px 20px;
-        }
+
         .latency {
-            color: red;
-            font-size: 0.8em;
+            color: #e53e3e;  /* Changed to red */
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #e2e8f0;
         }
+
+        .response-content {
+            margin-top: 1rem;
+        }
+
+        .input-area {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        #messageInput:focus {
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: #3182ce;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
         .error {
-            color: red;
-            font-style: italic;
+            color: #e53e3e;
+            font-size: 0.875rem;
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background-color: #fff5f5;
+            border-radius: 6px;
+            border-left: 4px solid #e53e3e;
         }
+
         .disabled {
             opacity: 0.5;
+            pointer-events: none;
+        }
+
+        #localResponse, #claudeResponse, #ChatGPTResponse {
+            min-height: 100px;
+            white-space: pre-wrap;
         }
     </style>
 </head>
@@ -59,12 +140,11 @@
             </div>
         </div>
         <div class="input-area">
-            <input type="text" id="messageInput" placeholder="Enter your message">
+            <input type="text" id="messageInput" placeholder="Enter your message...">
             <button onclick="sendMessage()">Send</button>
         </div>
     </div>
 
-    <!-- Config script that will be modified by the entrypoint script -->
     <script>
         window.config = {
             backendUrl: '%%BACKEND_URL%%'
@@ -72,6 +152,12 @@
     </script>
 
     <script>
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
         async function sendMessage() {
             const message = document.getElementById('messageInput').value;
             if (!message) return;
@@ -107,8 +193,8 @@
                         `;
                     } else {
                         claudeElement.innerHTML = `
-                            ${claudeResult.message}
                             <div class="latency">Latency: ${claudeResult.latency.toFixed(3)}s</div>
+                            <div class="response-content">${claudeResult.message}</div>
                         `;
                     }
                 }
@@ -124,8 +210,8 @@
                         `;
                     } else {
                         localElement.innerHTML = `
-                            ${localResult.message}
                             <div class="latency">Latency: ${localResult.latency.toFixed(3)}s</div>
+                            <div class="response-content">${localResult.message}</div>
                         `;
                     }
                 }
@@ -141,11 +227,14 @@
                         `;
                     } else {
                         ChatGPTElement.innerHTML = `
-                            ${ChatGPTResult.message}
                             <div class="latency">Latency: ${ChatGPTResult.latency.toFixed(3)}s</div>
+                            <div class="response-content">${ChatGPTResult.message}</div>
                         `;
                     }
                 }
+
+                // Clear input field after sending
+                document.getElementById('messageInput').value = '';
 
             } catch (error) {
                 console.error('Error:', error);
