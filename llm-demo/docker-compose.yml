@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   backend:
     build: ./backend
@@ -14,7 +14,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "80:80"
+      - "3001:80"
     depends_on:
       - backend
   llm:
@@ -32,4 +32,3 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-

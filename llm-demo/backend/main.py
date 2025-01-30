@@ -184,7 +184,8 @@ async def query_models(request: QueryRequest):
                     host="http://llm:11434",
                 )
                 response = client.chat(
-                    model="deepseek-r1:7b",
+                    # model="deepseek-r1:7b",
+                    model="llama3.2:1b",
                     messages=[
                         {
                             "role": "user",
