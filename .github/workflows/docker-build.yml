@@ -46,14 +46,14 @@ jobs:
       matrix:
         include:
           - image: ghcr.io/mischavandenburg/sb-llm-demo-frontend
-            dockerfile: frontend/Dockerfile
-            path: frontend
+            dockerfile: llm-demo/frontend/Dockerfile
+            path: llm-demo/frontend
           - image: ghcr.io/mischavandenburg/sb-llm-demo-backend
-            dockerfile: backend/Dockerfile
-            path: backend
+            dockerfile: llm-demo/backend/Dockerfile
+            path: llm-demo/backend
           - image: ghcr.io/mischavandenburg/sb-llm-demo-llm
-            dockerfile: llm/Dockerfile
-            path: llm
+            dockerfile: llm-demo/llm/Dockerfile
+            path: llm-demo/llm
 
     steps:
       - name: Checkout
@@ -76,7 +76,7 @@ jobs:
           push: true
 
   update_gitops:
-    if: false
+    if: false  # Temporarily disabled
     needs:
       - prepare_tag
       - build_and_push
@@ -99,10 +99,10 @@ jobs:
           cmd: |
             # Update frontend deployment
             yq e '.spec.template.spec.containers[0].image = "ghcr.io/mischavandenburg/sb-llm-demo-frontend:${{ needs.prepare_tag.outputs.tag }}"' -i ./apps/frontend/deployment.yaml
-
+            
             # Update backend deployment
             yq e '.spec.template.spec.containers[0].image = "ghcr.io/mischavandenburg/sb-llm-demo-backend:${{ needs.prepare_tag.outputs.tag }}"' -i ./apps/backend/deployment.yaml
-
+            
             # Update llm deployment
             yq e '.spec.template.spec.containers[0].image = "ghcr.io/mischavandenburg/sb-llm-demo-llm:${{ needs.prepare_tag.outputs.tag }}"' -i ./apps/llm/deployment.yaml
 
