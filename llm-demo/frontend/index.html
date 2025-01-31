@@ -1,249 +1,263 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
+  <head>
     <title>LLM Latency Comparison</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-        }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      }
 
-        body {
-            background-color: #f5f7fa;
-            color: #2d3748;
-            line-height: 1.6;
-        }
+      body {
+        background-color: #f5f7fa;
+        color: #2d3748;
+        line-height: 1.6;
+      }
 
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 20px;
-        }
+      .container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 20px;
+      }
 
-        .columns {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
+      .columns {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
 
-        .column {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
+      .column {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
 
-        .column:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
+      .column:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      }
 
-        h2 {
-            color: #2d3748;
-            margin-bottom: 0.5rem;
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
+      h2 {
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
 
-        .latency {
-            color: #e53e3e;  /* Changed to red */
-            font-size: 0.875rem;
-            margin-bottom: 1rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid #e2e8f0;
-        }
+      .latency {
+        color: #e53e3e; /* Changed to red */
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #e2e8f0;
+      }
 
-        .response-content {
-            margin-top: 1rem;
-        }
+      .response-content {
+        margin-top: 1rem;
+      }
 
-        .input-area {
-            margin-top: 2rem;
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
+      .input-area {
+        margin-top: 2rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+      }
 
-        #messageInput {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            outline: none;
-        }
+      #messageInput {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        outline: none;
+      }
 
-        #messageInput:focus {
-            border-color: #4299e1;
-            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
-        }
+      #messageInput:focus {
+        border-color: #4299e1;
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+      }
 
-        button {
-            padding: 0.75rem 1.5rem;
-            background-color: #4299e1;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-        }
+      button {
+        padding: 0.75rem 1.5rem;
+        background-color: #4299e1;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          background-color 0.2s,
+          transform 0.1s;
+      }
 
-        button:hover {
-            background-color: #3182ce;
-        }
+      button:hover {
+        background-color: #3182ce;
+      }
 
-        button:active {
-            transform: scale(0.98);
-        }
+      button:active {
+        transform: scale(0.98);
+      }
 
-        .error {
-            color: #e53e3e;
-            font-size: 0.875rem;
-            margin-top: 0.75rem;
-            padding: 0.75rem;
-            background-color: #fff5f5;
-            border-radius: 6px;
-            border-left: 4px solid #e53e3e;
-        }
+      .error {
+        color: #e53e3e;
+        font-size: 0.875rem;
+        margin-top: 0.75rem;
+        padding: 0.75rem;
+        background-color: #fff5f5;
+        border-radius: 6px;
+        border-left: 4px solid #e53e3e;
+      }
 
-        .disabled {
-            opacity: 0.5;
-            pointer-events: none;
-        }
+      .disabled {
+        opacity: 0.5;
+        pointer-events: none;
+      }
 
-        #localResponse, #claudeResponse, #ChatGPTResponse {
-            min-height: 100px;
-            white-space: pre-wrap;
-        }
+      #localResponse,
+      #claudeResponse,
+      #ChatGPTResponse {
+        min-height: 100px;
+        white-space: pre-wrap;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="columns">
-            <div class="column">
-                <h2>Ollama</h2>
-                <div id="localResponse">Ollama</div>
-            </div>
-            <div class="column">
-                <h2>Claude</h2>
-                <div id="claudeResponse">Claude</div>
-            </div>
-            <div class="column">
-                <h2>ChatGPT</h2>
-                <div id="ChatGPTResponse">ChatGPT</div>
-            </div>
+      <div class="columns">
+        <div class="column">
+          <h2>Ollama Hallo Darryl</h2>
+          <div id="localResponse">Ollama</div>
         </div>
-        <div class="input-area">
-            <input type="text" id="messageInput" placeholder="Enter your message...">
-            <button onclick="sendMessage()">Send</button>
+        <div class="column">
+          <h2>Claude</h2>
+          <div id="claudeResponse">Claude</div>
         </div>
+        <div class="column">
+          <h2>ChatGPT</h2>
+          <div id="ChatGPTResponse">ChatGPT</div>
+        </div>
+      </div>
+      <div class="input-area">
+        <input
+          type="text"
+          id="messageInput"
+          placeholder="Enter your message..."
+        />
+        <button onclick="sendMessage()">Send</button>
+      </div>
     </div>
 
     <script>
-        window.config = {
-            backendUrl: '%%BACKEND_URL%%'
-        };
+      window.config = {
+        backendUrl: "%%BACKEND_URL%%",
+      };
     </script>
 
     <script>
-        document.getElementById('messageInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
+      document
+        .getElementById("messageInput")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            sendMessage();
+          }
         });
 
-        async function sendMessage() {
-            const message = document.getElementById('messageInput').value;
-            if (!message) return;
+      async function sendMessage() {
+        const message = document.getElementById("messageInput").value;
+        if (!message) return;
 
-            // Clear previous responses
-            document.getElementById('localResponse').innerHTML = 'Loading...';
-            document.getElementById('claudeResponse').innerHTML = 'Loading...';
-            document.getElementById('ChatGPTResponse').innerHTML = 'Loading...';
+        // Clear previous responses
+        document.getElementById("localResponse").innerHTML = "Loading...";
+        document.getElementById("claudeResponse").innerHTML = "Loading...";
+        document.getElementById("ChatGPTResponse").innerHTML = "Loading...";
 
-            try {
-                const response = await fetch(window.config.backendUrl + '/query', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message })
-                });
+        try {
+          const response = await fetch(window.config.backendUrl + "/query", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message }),
+          });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
 
-                const data = await response.json();
+          const data = await response.json();
 
-                // Handle Claude response
-                if (data.claude) {
-                    const claudeResult = data.claude;
-                    const claudeElement = document.getElementById('claudeResponse');
+          // Handle Claude response
+          if (data.claude) {
+            const claudeResult = data.claude;
+            const claudeElement = document.getElementById("claudeResponse");
 
-                    if (claudeResult.error) {
-                        claudeElement.innerHTML = `
+            if (claudeResult.error) {
+              claudeElement.innerHTML = `
                             <div class="error">Error: ${claudeResult.error}</div>
                         `;
-                    } else {
-                        claudeElement.innerHTML = `
+            } else {
+              claudeElement.innerHTML = `
                             <div class="latency">Latency: ${claudeResult.latency.toFixed(3)}s</div>
                             <div class="response-content">${claudeResult.message}</div>
                         `;
-                    }
-                }
+            }
+          }
 
-                // Handle Local AI response
-                if (data.local) {
-                    const localResult = data.local;
-                    const localElement = document.getElementById('localResponse');
+          // Handle Local AI response
+          if (data.local) {
+            const localResult = data.local;
+            const localElement = document.getElementById("localResponse");
 
-                    if (localResult.error) {
-                        localElement.innerHTML = `
+            if (localResult.error) {
+              localElement.innerHTML = `
                             <div class="error">Error: ${localResult.error}</div>
                         `;
-                    } else {
-                        localElement.innerHTML = `
+            } else {
+              localElement.innerHTML = `
                             <div class="latency">Latency: ${localResult.latency.toFixed(3)}s</div>
                             <div class="response-content">${localResult.message}</div>
                         `;
-                    }
-                }
+            }
+          }
 
-                // Handle OpenAI response
-                if (data.openai) {
-                    const ChatGPTResult = data.openai;
-                    const ChatGPTElement = document.getElementById('ChatGPTResponse');
+          // Handle OpenAI response
+          if (data.openai) {
+            const ChatGPTResult = data.openai;
+            const ChatGPTElement = document.getElementById("ChatGPTResponse");
 
-                    if (ChatGPTResult.error) {
-                        ChatGPTElement.innerHTML = `
+            if (ChatGPTResult.error) {
+              ChatGPTElement.innerHTML = `
                             <div class="error">Error: ${ChatGPTResult.error}</div>
                         `;
-                    } else {
-                        ChatGPTElement.innerHTML = `
+            } else {
+              ChatGPTElement.innerHTML = `
                             <div class="latency">Latency: ${ChatGPTResult.latency.toFixed(3)}s</div>
                             <div class="response-content">${ChatGPTResult.message}</div>
                         `;
-                    }
-                }
-
-                // Clear input field after sending
-                document.getElementById('messageInput').value = '';
-
-            } catch (error) {
-                console.error('Error:', error);
-                const errorMessage = `<div class="error">Error: ${error.message}</div>`;
-                document.getElementById('claudeResponse').innerHTML = errorMessage;
-                document.getElementById('localResponse').innerHTML = errorMessage;
-                document.getElementById('ChatGPTResponse').innerHTML = errorMessage;
             }
+          }
+
+          // Clear input field after sending
+          document.getElementById("messageInput").value = "";
+        } catch (error) {
+          console.error("Error:", error);
+          const errorMessage = `<div class="error">Error: ${error.message}</div>`;
+          document.getElementById("claudeResponse").innerHTML = errorMessage;
+          document.getElementById("localResponse").innerHTML = errorMessage;
+          document.getElementById("ChatGPTResponse").innerHTML = errorMessage;
         }
+      }
     </script>
-</body>
+  </body>
 </html>
